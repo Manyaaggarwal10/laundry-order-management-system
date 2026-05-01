@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FreshPress — Laundry Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  /* ── RESET & BASE ────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:         #f0ede8;
+    --surface:    #faf9f7;
+    --surface2:   #ffffff;
+    --border:     #e2ddd8;
+    --text:       #1a1714;
+    --text-muted: #7a746e;
+    --accent:     #2d6a4f;
+    --accent-lt:  #e8f4ee;
+    --accent2:    #c77d32;
+    --accent2-lt: #fdf0e0;
+    --danger:     #c0392b;
+    --danger-lt:  #fdecea;
+
+    --status-received:   #8e8e93;
+    --status-processing: #c77d32;
+    --status-ready:      #2980b9;
+    --status-delivered:  #27ae60;
+
+    --radius:  14px;
+    --radius-sm: 8px;
+    --shadow:  0 2px 12px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.05);
+    --shadow-lg: 0 8px 40px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+
+    --font-display: 'Sora', sans-serif;
+    --font-mono:    'DM Mono', monospace;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-display);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── SCREENS ─────────────────────────────────────────── */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ── LANDING ─────────────────────────────────────────── */
+  #screen-landing {
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    background: linear-gradient(145deg, #e8f4ee 0%, #f0ede8 50%, #fdf0e0 100%);
+  }
+
+  .landing-inner { max-width: 560px; width: 100%; text-align: center; }
+
+  .brand-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--accent);
+    margin-bottom: 28px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    box-shadow: var(--shadow);
+  }
+
+  .landing-title {
+    font-size: clamp(2.2rem, 5vw, 3.2rem);
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--text);
+    margin-bottom: 12px;
+    letter-spacing: -0.03em;
+  }
+
+  .landing-title span { color: var(--accent); }
+
+  .landing-sub {
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin-bottom: 48px;
+    line-height: 1.6;
+    font-weight: 400;
+  }
+
+  .role-prompt {
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  .role-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .role-card {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 20px;
+    cursor: pointer;
+    transition: all 0.22s cubic-bezier(.4,0,.2,1);
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .role-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.22s;
+    border-radius: calc(var(--radius) - 2px);
+  }
+
+  .role-card.customer::before { background: linear-gradient(135deg, var(--accent-lt), transparent); }
+  .role-card.owner::before    { background: linear-gradient(135deg, var(--accent2-lt), transparent); }
+
+  .role-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+  }
+  .role-card.owner:hover { border-color: var(--accent2); }
+  .role-card:hover::before { opacity: 1; }
+
+  .role-icon {
+    font-size: 2.2rem;
+    margin-bottom: 12px;
+    display: block;
+    position: relative;
+    z-index: 1;
+  }
+
+  .role-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .role-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── TOP NAV ─────────────────────────────────────────── */
+  .topnav {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+  }
+
+  .nav-brand {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .nav-brand .dot { color: var(--accent2); }
+
+  .nav-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg);
+    border-radius: 100px;
+    padding: 4px;
+  }
+
+  .nav-tab {
+    padding: 6px 18px;
+    border-radius: 100px;
+    font-size: 0.83rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    transition: all 0.18s;
+    white-space: nowrap;
+  }
+
+  .nav-tab.active {
+    background: var(--surface2);
+    color: var(--text);
+    box-shadow: var(--shadow);
+  }
+
+  .nav-back {
+    font-size: 0.83rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: transparent;
+    transition: all 0.18s;
+  }
+
+  .nav-back:hover { background: var(--bg); color: var(--text); }
+
+  /* ── PAGE WRAPPER ────────────────────────────────────── */
+  .page-body {
+    flex: 1;
+    padding: 32px 24px;
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .page-body.wide { max-width: 1100px; }
+
+  /* ── TABS CONTENT ────────────────────────────────────── */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── SECTION HEADER ──────────────────────────────────── */
+  .section-header {
+    margin-bottom: 24px;
+  }
+
+  .section-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+
+  .section-sub {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  /* ── CARD ────────────────────────────────────────────── */
+  .card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+  }
+
+  /* ── FORM ELEMENTS ───────────────────────────────────── */
+  .form-group { margin-bottom: 18px; }
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 7px;
+  }
+
+  input[type="text"],
+  input[type="tel"],
+  input[type="number"],
+  select {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-display);
+    font-size: 0.92rem;
+    color: var(--text);
+    background: var(--surface);
+    transition: border-color 0.18s, box-shadow 0.18s;
+    outline: none;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(45,106,79,0.12);
+  }
+
+  select { cursor: pointer; }
+
+  /* ── BUTTONS ─────────────────────────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 11px 22px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-display);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.18s;
+    text-decoration: none;
+  }
+
+  .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(45,106,79,0.3);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: #246040;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(45,106,79,0.35);
+  }
+
+  .btn-secondary {
+    background: var(--bg);
+    color: var(--text);
+    border: 1.5px solid var(--border);
+  }
+
+  .btn-secondary:hover:not(:disabled) { background: var(--border); }
+
+  .btn-sm {
+    padding: 7px 14px;
+    font-size: 0.8rem;
+    border-radius: 6px;
+  }
+
+  .btn-full { width: 100%; }
+
+  /* ── GARMENT CARDS ───────────────────────────────────── */
+  .garments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .garment-card {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 12px;
+    text-align: center;
+    transition: all 0.18s;
+  }
+
+  .garment-card.selected {
+    border-color: var(--accent);
+    background: var(--accent-lt);
+    box-shadow: 0 0 0 3px rgba(45,106,79,0.1);
+  }
+
+  .garment-icon { font-size: 2rem; margin-bottom: 8px; display: block; }
+
+  .garment-name {
+    font-size: 0.83rem;
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+
+  .garment-price {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    font-family: var(--font-mono);
+  }
+
+  .qty-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .qty-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    color: var(--text);
+  }
+
+  .qty-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .qty-value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    min-width: 20px;
+    font-family: var(--font-mono);
+  }
+
+  /* ── PRICE SUMMARY ───────────────────────────────────── */
+  .price-summary {
+    background: var(--accent-lt);
+    border: 1.5px solid rgba(45,106,79,0.2);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .price-label { font-size: 0.85rem; font-weight: 600; color: var(--accent); }
+
+  .price-amount {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent);
+    font-family: var(--font-mono);
+  }
+
+  /* ── STATUS BADGE ────────────────────────────────────── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 100px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .badge-received   { background: #f0f0f0; color: var(--status-received); }
+  .badge-processing { background: var(--accent2-lt); color: var(--status-processing); }
+  .badge-ready      { background: #e3f0fb; color: var(--status-ready); }
+  .badge-delivered  { background: var(--accent-lt); color: var(--status-delivered); }
+
+  /* ── ORDER CARDS (Customer) ──────────────────────────── */
+  .orders-list { display: flex; flex-direction: column; gap: 14px; }
+
+  .order-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .order-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .order-id {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .order-items {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  .order-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+
+  .order-total {
+    font-weight: 700;
+    font-size: 1.05rem;
+    font-family: var(--font-mono);
+    color: var(--accent);
+  }
+
+  /* ── OWNER TABLE ─────────────────────────────────────── */
+  .table-wrap {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 620px;
+  }
+
+  thead tr { background: var(--bg); }
+
+  th {
+    padding: 12px 16px;
+    font-size: 0.73rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 14px 16px;
+    font-size: 0.875rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+
+  tbody tr:hover { background: var(--bg); }
+
+  td .order-id { font-size: 0.82rem; }
+
+  .actions-cell { display: flex; align-items: center; gap: 8px; }
+
+  .actions-cell select {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    border-radius: 6px;
+    width: auto;
+  }
+
+  /* ── DASHBOARD STATS ─────────────────────────────────── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: transform 0.18s;
+  }
+
+  .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+  .stat-icon { font-size: 1.5rem; margin-bottom: 4px; }
+
+  .stat-label {
+    font-size: 0.73rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+  }
+
+  .stat-value {
+    font-size: 1.7rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  .stat-card.accent-green  { border-left: 3px solid var(--status-delivered); }
+  .stat-card.accent-orange { border-left: 3px solid var(--status-processing); }
+  .stat-card.accent-blue   { border-left: 3px solid var(--status-ready); }
+  .stat-card.accent-gray   { border-left: 3px solid var(--status-received); }
+
+  /* ── FILTERS BAR ─────────────────────────────────────── */
+  .filters-bar {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow);
+  }
+
+  .filters-bar .form-group { margin-bottom: 0; flex: 1; min-width: 150px; }
+  .filters-bar select, .filters-bar input { padding: 9px 12px; font-size: 0.83rem; }
+
+  /* ── TOAST ───────────────────────────────────────────── */
+  #toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+  }
+
+  .toast {
+    background: var(--text);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    pointer-events: auto;
+    animation: toastIn 0.3s ease;
+    max-width: 320px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .toast.success { background: var(--accent); }
+  .toast.error   { background: var(--danger); }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* ── LOADING SPINNER ─────────────────────────────────── */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── EMPTY STATE ─────────────────────────────────────── */
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-muted);
+  }
+
+  .empty-state .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+  .empty-state p { font-size: 0.9rem; }
+
+  /* ── PHONE LOOKUP ────────────────────────────────────── */
+  .lookup-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+
+  .lookup-row .form-group { flex: 1; margin-bottom: 0; }
+
+  /* ── ROW ANIM ────────────────────────────────────────── */
+  tbody tr { animation: slideIn 0.25s ease; }
+
+  /* ── RESPONSIVE ──────────────────────────────────────── */
+  @media (max-width: 600px) {
+    .role-cards { grid-template-columns: 1fr; }
+    .page-body { padding: 20px 16px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .topnav { padding: 0 16px; }
+    .nav-tab { padding: 6px 12px; font-size: 0.78rem; }
+    .garments-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ── TRANSITION ──────────────────────────────────────── */
+  .screen { animation: fadeIn 0.28s ease; }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* ── MISC ────────────────────────────────────────────── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 20px 0;
+  }
+
+  .inline-row {
+    display: flex;
+    gap: 16px;
+  }
+
+  .inline-row .form-group { flex: 1; }
+
+  .text-center { text-align: center; }
+  .text-muted  { color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     TOAST CONTAINER
+════════════════════════════════════════════ -->
+<div id="toast-container"></div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN: LANDING
+════════════════════════════════════════════ -->
+<div id="screen-landing" class="screen active">
+  <div class="landing-inner">
+    <div class="brand-badge">🫧 FreshPress · Laundry System</div>
+    <h1 class="landing-title">Clean clothes,<br><span>smarter orders.</span></h1>
+    <p class="landing-sub">Streamline your laundry workflow — from placing orders to tracking every garment, all in one place.</p>
+    <p class="role-prompt">Who are you?</p>
+    <div class="role-cards">
+      <div class="role-card customer" onclick="goTo('customer')">
+        <span class="role-icon">👤</span>
+        <div class="role-title">Customer</div>
+        <div class="role-desc">Place laundry orders, track status, and manage your garments easily.</div>
+      </div>
+      <div class="role-card owner" onclick="goTo('owner')">
+        <span class="role-icon">🏪</span>
+        <div class="role-title">Store Owner</div>
+        <div class="role-desc">Manage all orders, update statuses, and view your store dashboard.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN: CUSTOMER
+════════════════════════════════════════════ -->
+<div id="screen-customer" class="screen">
+  <nav class="topnav">
+    <div class="nav-brand">🫧 Fresh<span class="dot">Press</span></div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchTab('customer','create')">📦 New Order</button>
+      <button class="nav-tab" onclick="switchTab('customer','myorders')">📋 My Orders</button>
+    </div>
+    <button class="nav-back" onclick="goTo('landing')">← Back</button>
+  </nav>
+
+  <div class="page-body">
+
+    <!-- TAB: Create Order -->
+    <div id="customer-create" class="tab-panel active">
+      <div class="section-header">
+        <div class="section-title">Place a New Order</div>
+        <div class="section-sub">Fill in your details and select garments below</div>
+      </div>
+
+      <div class="card">
+        <div class="inline-row">
+          <div class="form-group">
+            <label>Your Name</label>
+            <input type="text" id="c-name" placeholder="e.g. Rahul Sharma" />
+          </div>
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="tel" id="c-phone" placeholder="e.g. 9876543210" />
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section-header">
+          <div class="section-title" style="font-size:1rem;">Select Garments</div>
+          <div class="section-sub">Tap + / − to adjust quantity</div>
+        </div>
+
+        <div class="garments-grid" id="garments-grid">
+          <!-- populated by JS -->
+        </div>
+
+        <div class="price-summary">
+          <div>
+            <div class="price-label">Estimated Total</div>
+            <div class="text-muted" style="font-size:0.75rem; margin-top:2px;">Based on selected items</div>
+          </div>
+          <div class="price-amount" id="total-price">₹0</div>
+        </div>
+
+        <button class="btn btn-primary btn-full" id="place-order-btn" onclick="placeOrder()">
+          🧺 Place Order
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB: My Orders -->
+    <div id="customer-myorders" class="tab-panel">
+      <div class="section-header">
+        <div class="section-title">My Orders</div>
+        <div class="section-sub">Enter your phone number to fetch your orders</div>
+      </div>
+
+      <div class="card">
+        <div class="lookup-row">
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="tel" id="lookup-phone" placeholder="Enter your phone number" />
+          </div>
+          <button class="btn btn-primary" onclick="fetchMyOrders()">Fetch Orders</button>
+        </div>
+      </div>
+
+      <div id="my-orders-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN: OWNER
+════════════════════════════════════════════ -->
+<div id="screen-owner" class="screen">
+  <nav class="topnav">
+    <div class="nav-brand">🫧 Fresh<span class="dot">Press</span></div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchTab('owner','dashboard')">📊 Dashboard</button>
+      <button class="nav-tab" onclick="switchTab('owner','allorders')">📋 Orders</button>
+    </div>
+    <button class="nav-back" onclick="goTo('landing')">← Back</button>
+  </nav>
+
+  <div class="page-body wide">
+
+    <!-- TAB: Dashboard -->
+    <div id="owner-dashboard" class="tab-panel active">
+      <div class="section-header">
+        <div class="section-title">Store Dashboard</div>
+        <div class="section-sub">Overview of your laundry operations</div>
+      </div>
+
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card accent-green">
+          <div class="stat-icon">📦</div>
+          <div class="stat-label">Total Orders</div>
+          <div class="stat-value" id="stat-total">—</div>
+        </div>
+        <div class="stat-card accent-orange">
+          <div class="stat-icon">💰</div>
+          <div class="stat-label">Total Revenue</div>
+          <div class="stat-value" id="stat-revenue">—</div>
+        </div>
+        <div class="stat-card accent-gray">
+          <div class="stat-icon">📥</div>
+          <div class="stat-label">Received</div>
+          <div class="stat-value" id="stat-received">—</div>
+        </div>
+        <div class="stat-card accent-orange">
+          <div class="stat-icon">⚙️</div>
+          <div class="stat-label">Processing</div>
+          <div class="stat-value" id="stat-processing">—</div>
+        </div>
+        <div class="stat-card accent-blue">
+          <div class="stat-icon">✅</div>
+          <div class="stat-label">Ready</div>
+          <div class="stat-value" id="stat-ready">—</div>
+        </div>
+        <div class="stat-card accent-green">
+          <div class="stat-icon">🚚</div>
+          <div class="stat-label">Delivered</div>
+          <div class="stat-value" id="stat-delivered">—</div>
+        </div>
+      </div>
+
+      <div class="card text-center" style="padding:32px;">
+        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:16px;">Go to Orders tab to manage and update order statuses.</p>
+        <button class="btn btn-primary" onclick="switchTab('owner','allorders'); loadAllOrders();">View All Orders →</button>
+      </div>
+    </div>
+
+    <!-- TAB: All Orders -->
+    <div id="owner-allorders" class="tab-panel">
+      <div class="section-header">
+        <div class="section-title">All Orders</div>
+        <div class="section-sub">Search, filter, and update order statuses</div>
+      </div>
+
+      <div class="filters-bar">
+        <div class="form-group">
+          <label>Filter by Status</label>
+          <select id="filter-status" onchange="applyFilters()">
+            <option value="">All Statuses</option>
+            <option value="RECEIVED">Received</option>
+            <option value="PROCESSING">Processing</option>
+            <option value="READY">Ready</option>
+            <option value="DELIVERED">Delivered</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Search Name / Phone</label>
+          <input type="text" id="filter-search" placeholder="Name or phone..." oninput="applyFilters()" />
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="clearFilters()">✕ Clear</button>
+        <button class="btn btn-primary btn-sm" onclick="loadAllOrders()">↻ Refresh</button>
+      </div>
+
+      <div class="table-wrap" id="orders-table-wrap">
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <p>Loading orders…</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════ -->
+<script>
+const API = 'http://127.0.0.1:5000';
+
+window.onload = function () {
+  const role = new URLSearchParams(window.location.search).get("role");
+
+  if (role === "customer") {
+    goTo('customer'); // ✅ THIS is correct for your app
+
+    setTimeout(() => {
+      document.getElementById("customer-create")?.scrollIntoView({
+        behavior: "smooth"
+      });
+    }, 200);
+  }
+};
+
+/* ─── GARMENTS CONFIG ─── */
+const GARMENTS = [
+  { key: 'shirt', label: 'Shirt', icon: '👕', price: 50 },
+  { key: 'pants', label: 'Pants', icon: '👖', price: 80 },
+  { key: 'saree', label: 'Saree', icon: '🧣', price: 120 },
+];
+
+const qty = {};
+GARMENTS.forEach(g => qty[g.key] = 0);
+
+/* ─── NAVIGATION ─── */
+function goTo(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`screen-${screen}`).classList.add('active');
+  if (screen === 'owner') { loadDashboard(); loadAllOrders(); }
+}
+
+function switchTab(role, tab) {
+  const screen = document.getElementById(`screen-${role}`);
+  screen.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  screen.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`${role}-${tab}`).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (role === 'owner' && tab === 'allorders') loadAllOrders();
+  if (role === 'owner' && tab === 'dashboard') loadDashboard();
+}
+
+/* ─── BUILD GARMENT CARDS ─── */
+function buildGarmentCards() {
+  const grid = document.getElementById('garments-grid');
+  grid.innerHTML = GARMENTS.map(g => `
+    <div class="garment-card" id="gcard-${g.key}">
+      <span class="garment-icon">${g.icon}</span>
+      <div class="garment-name">${g.label}</div>
+      <div class="garment-price">₹${g.price} / piece</div>
+      <div class="qty-control">
+        <button class="qty-btn" onclick="changeQty('${g.key}',-1)">−</button>
+        <span class="qty-value" id="qty-${g.key}">0</span>
+        <button class="qty-btn" onclick="changeQty('${g.key}',1)">+</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function changeQty(key, delta) {
+  qty[key] = Math.max(0, qty[key] + delta);
+  document.getElementById(`qty-${key}`).textContent = qty[key];
+  const card = document.getElementById(`gcard-${key}`);
+  card.classList.toggle('selected', qty[key] > 0);
+  updateTotal();
+}
+
+function updateTotal() {
+  let total = 0;
+  GARMENTS.forEach(g => total += qty[g.key] * g.price);
+  document.getElementById('total-price').textContent = `₹${total}`;
+}
+
+/* ─── PLACE ORDER ─── */
+async function placeOrder() {
+  const name  = document.getElementById('c-name').value.trim();
+  const phone = document.getElementById('c-phone').value.trim();
+
+  if (!name || !phone) { toast('Please enter your name and phone number.', 'error'); return; }
+
+  const garments = [];
+
+GARMENTS.forEach(g => {
+  if (qty[g.key] > 0) {
+    garments.push({
+      type: g.label,
+      quantity: qty[g.key]
+    });
+  }
+});
+
+  if (garments.length === 0) {
+  toast('Please select at least one garment.', 'error');
+  return;
+}
+
+  const btn = document.getElementById('place-order-btn');
+  setLoading(btn, true);
+
+  try {
+    const res = await fetch(`${API}/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+  customer_name: name,
+  phone: phone,
+  garments: garments
+})
+    });
+    const data = await res.json();
+    if (res.ok) {
+     const orderId = data.order_id || data.id;
+const total = data.total_amount || 0;
+
+const query = new URLSearchParams({
+  orderId: orderId,
+  name: name,
+  phone: phone,
+  total: total,
+  items: JSON.stringify(garments)
+});
+
+window.location.href = `receipt.html?${query.toString()}`;
+      resetOrderForm();
+    } else {
+      toast(data.message || data.error || 'Failed to place order.', 'error');
+    }
+  } catch (e) {
+    toast('Could not connect to server.', 'error');
+  }
+  setLoading(btn, false);
+}
+
+function resetOrderForm() {
+  document.getElementById('c-name').value = '';
+  document.getElementById('c-phone').value = '';
+  GARMENTS.forEach(g => { qty[g.key] = 0; });
+  buildGarmentCards();
+  updateTotal();
+}
+
+/* ─── MY ORDERS ─── */
+async function fetchMyOrders() {
+  const phone = document.getElementById('lookup-phone').value.trim();
+  if (!phone) { toast('Enter your phone number first.', 'error'); return; }
+
+  const container = document.getElementById('my-orders-list');
+  container.innerHTML = `<div class="empty-state"><div class="empty-icon">⏳</div><p>Fetching your orders…</p></div>`;
+
+  try {
+    const res = await fetch(`${API}/orders?phone=${encodeURIComponent(phone)}`);
+    const data = await res.json();
+    const orders = Array.isArray(data) ? data : (data.orders || []);
+    renderMyOrders(orders);
+  } catch (e) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><p>Could not connect to server.</p></div>`;
+  }
+}
+
+function renderMyOrders(orders) {
+  const container = document.getElementById('my-orders-list');
+  if (!orders.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>No orders found for this number.</p></div>`;
+    return;
+  }
+  container.innerHTML = `<div class="orders-list">${orders.map(o => `
+    <div class="order-card">
+      <div class="order-card-top">
+        <span class="order-id">#${o.id || o.order_id}</span>
+        <span class="badge badge-${(o.status||'').toLowerCase()}">${o.status}</span>
+      </div>
+      <div class="order-items">${formatItems(o.garments)}</div>
+      <div class="order-footer">
+        <span class="text-muted">${o.customer_name || ''}</span>
+        <span class="order-total">₹${o.total_amount || o.total || 0}</span>
+      </div>
+    </div>
+  `).join('')}</div>`;
+}
+
+function formatItems(items) {
+  if (!items) return '—';
+
+  if (typeof items === 'string') {
+    items = JSON.parse(items);
+  }
+
+  return items.map(i => `${i.type} × ${i.quantity}`).join(' · ');
+}
+
+/* ─── DASHBOARD ─── */
+async function loadDashboard() {
+  try {
+    const res = await fetch(`${API}/dashboard`);
+    const d = await res.json();
+
+    document.getElementById('stat-total').textContent = d.total_orders ?? d.totalOrders ?? '—';
+    document.getElementById('stat-revenue').textContent = d.total_revenue != null ? `₹${d.total_revenue}` : (d.totalRevenue != null ? `₹${d.totalRevenue}` : '—');
+
+    const byStatus = d.status_breakdown || d.orders_by_status || d.ordersByStatus || {};
+   document.getElementById('stat-received').textContent   = byStatus['RECEIVED']   ?? 0;
+   document.getElementById('stat-processing').textContent = byStatus['PROCESSING'] ?? 0;
+   document.getElementById('stat-ready').textContent      = byStatus['READY']      ?? 0;
+   document.getElementById('stat-delivered').textContent  = byStatus['DELIVERED']  ?? 0;
+  } catch (e) {
+    console.warn('Dashboard load failed:', e);
+  }
+}
+
+/* ─── ALL ORDERS ─── */
+let allOrders = [];
+
+async function loadAllOrders() {
+  const wrap = document.getElementById('orders-table-wrap');
+  wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">⏳</div><p>Loading orders…</p></div>`;
+
+  try {
+    const status = document.getElementById('filter-status').value;
+    let url = `${API}/orders`;
+    if (status) url += `?status=${status}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    allOrders = Array.isArray(data) ? data : (data.orders || []);
+    renderTable(allOrders);
+  } catch (e) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><p>Could not connect to server.</p></div>`;
+  }
+}
+
+function applyFilters() {
+  const search = document.getElementById('filter-search').value.toLowerCase();
+  const status = document.getElementById('filter-status').value;
+
+  let filtered = allOrders.filter(o => {
+    const matchStatus = !status || o.status === status;
+    const matchSearch = !search ||
+      (o.customer_name || '').toLowerCase().includes(search) ||
+      (o.phone || '').includes(search);
+    return matchStatus && matchSearch;
+  });
+  renderTable(filtered);
+}
+
+function clearFilters() {
+  document.getElementById('filter-status').value = '';
+  document.getElementById('filter-search').value = '';
+  loadAllOrders();
+}
+
+function renderTable(orders) {
+  const wrap = document.getElementById('orders-table-wrap');
+  if (!orders.length) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>No orders found.</p></div>`;
+    return;
+  }
+
+  wrap.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Customer</th>
+          <th>Phone</th>
+          <th>Items</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${orders.map(o => {
+          const id = o.id || o.order_id;
+          return `
+          <tr id="row-${id}">
+            <td><span class="order-id">#${id}</span></td>
+            <td><strong>${o.customer_name || '—'}</strong></td>
+            <td>${o.phone || '—'}</td>
+            <td style="max-width:200px;font-size:0.8rem;color:var(--text-muted)">${formatItems(o.garments)}</td>
+            <td><strong style="font-family:var(--font-mono)">₹${o.total_amount || o.total || 0}</strong></td>
+            <td><span class="badge badge-${(o.status||'').toLowerCase()}">${o.status}</span></td>
+            <td>
+              <div class="actions-cell">
+                <select id="sel-${id}">
+                  <option value="RECEIVED"   ${o.status==='RECEIVED'  ?'selected':''}>Received</option>
+                  <option value="PROCESSING" ${o.status==='PROCESSING'?'selected':''}>Processing</option>
+                  <option value="READY"      ${o.status==='READY'     ?'selected':''}>Ready</option>
+                  <option value="DELIVERED"  ${o.status==='DELIVERED' ?'selected':''}>Delivered</option>
+                </select>
+                <button class="btn btn-primary btn-sm" id="upd-${id}" onclick="updateStatus(${id})">Update</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function updateStatus(id) {
+  const sel = document.getElementById(`sel-${id}`);
+  const btn = document.getElementById(`upd-${id}`);
+  const newStatus = sel.value;
+
+  setLoading(btn, true);
+  try {
+    const res = await fetch(`${API}/orders/${id}/status?role=owner`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      toast(`Order #${id} updated to ${newStatus}`, 'success');
+      // update badge inline
+      const row = document.getElementById(`row-${id}`);
+      if (row) {
+        const badge = row.querySelector('.badge');
+        badge.className = `badge badge-${newStatus.toLowerCase()}`;
+        badge.textContent = newStatus;
+      }
+      // update local array
+      const order = allOrders.find(o => (o.id || o.order_id) === id);
+      if (order) order.status = newStatus;
+      loadDashboard();
+    } else {
+      toast(data.message || data.error || 'Update failed.', 'error');
+    }
+  } catch (e) {
+    toast('Could not connect to server.', 'error');
+  }
+  setLoading(btn, false);
+}
+
+/* ─── HELPERS ─── */
+function setLoading(btn, loading) {
+  btn.disabled = loading;
+  if (loading) {
+    btn._txt = btn.innerHTML;
+    btn.innerHTML = `<span class="spinner"></span> Loading…`;
+  } else {
+    btn.innerHTML = btn._txt || 'Submit';
+  }
+}
+
+function toast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'} ${msg}`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3800);
+}
+
+/* ─── INIT ─── */
+buildGarmentCards();
+</script>
+</body>
+</html>

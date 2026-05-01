@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Order Receipt</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .receipt {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      width: 400px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    .row {
+      margin: 10px 0;
+    }
+
+    .items {
+      margin-top: 15px;
+      padding: 10px;
+      background: #fafafa;
+      border-radius: 8px;
+    }
+
+    .btn {
+      margin-top: 20px;
+      width: 100%;
+      padding: 10px;
+      background: #2ecc71;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="receipt">
+  <h2>🧾 Order Receipt</h2>
+
+  <div class="row"><strong>Order ID:</strong> <span id="orderId"></span></div>
+  <div class="row"><strong>Name:</strong> <span id="name"></span></div>
+  <div class="row"><strong>Phone:</strong> <span id="phone"></span></div>
+
+  <div class="items" id="items"></div>
+
+  <div class="row"><strong>Total:</strong> ₹<span id="total"></span></div>
+  <div class="row"><strong>Status:</strong> RECEIVED</div>
+
+  <button class="btn" onclick="goBack()">⬅ Back to Order</button>
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+
+  document.getElementById("orderId").textContent = params.get("orderId");
+  document.getElementById("name").textContent = params.get("name");
+  document.getElementById("phone").textContent = params.get("phone");
+  document.getElementById("total").textContent = params.get("total");
+
+  const items = JSON.parse(params.get("items") || "[]");
+
+  document.getElementById("items").innerHTML =
+    "<strong>Items:</strong><br>" +
+    items.map(i => `${i.type} × ${i.quantity}`).join("<br>");
+
+  function goBack() {
+    window.location.href = "index.html?role=customer";
+  }
+</script>
+
+</body>
+</html>
