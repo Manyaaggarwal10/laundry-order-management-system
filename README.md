@@ -205,6 +205,11 @@ http://127.0.0.1:5000
 
 ---
 
+## Deployment Link
+https://laundry-order-management-system-b68h.onrender.com/
+
+---
+
 ## 🎥 Demo
 
 <img width="1915" height="877" alt="image" src="https://github.com/user-attachments/assets/b37ec032-18d9-4a2e-81b9-bb1a41eb078d" />
