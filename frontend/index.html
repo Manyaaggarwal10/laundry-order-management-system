@@ -1091,7 +1091,7 @@ const query = new URLSearchParams({
   items: JSON.stringify(garments)
 });
 
-window.location.href = `receipt.html?${query.toString()}`;
+window.location.href = `/receipt?${query.toString()}`;
       resetOrderForm();
     } else {
       toast(data.message || data.error || 'Failed to place order.', 'error');
